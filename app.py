@@ -6,14 +6,27 @@ import json
 import shap
 import matplotlib.pyplot as plt
 
-#  Load saved files
+#  Load saved files 
 model       = pickle.load(open('xgb_model.pkl', 'rb'))
 scaler      = pickle.load(open('scaler.pkl', 'rb'))
 le_district = pickle.load(open('le_district.pkl', 'rb'))
 with open('feature_cols.json') as f:
     feature_cols = json.load(f)
 
-#  Page config 
+#  Elevation mapping (fixed per district) 
+district_elevation = {
+    'Ampara': 38, 'Anuradhapura': 95, 'Badulla': 676,
+    'Batticaloa': 10, 'Colombo': 4, 'Galle': 8,
+    'Gampaha': 19, 'Hambantota': 6, 'Jaffna': 8,
+    'Kalutara': 5, 'Kandy': 499, 'Kegalle': 172,
+    'Kilinochchi': 19, 'Kurunegala': 129, 'Mannar': 5,
+    'Matale': 362, 'Matara': 8, 'Moneragala': 152,
+    'Mulativu': 5, 'Nuwara Eliya': 1865, 'Polonnaruwa': 56,
+    'Puttalam': 4, 'Ratnapura': 73, 'Trincomalee': 8,
+    'Vavuniya': 104
+}
+
+# Page config 
 st.set_page_config(page_title="🦟 Dengue Outbreak Predictor", page_icon="🦟")
 st.title("🦟 Sri Lanka Dengue Outbreak Predictor")
 st.markdown("Select your district and enter current weather conditions to predict dengue outbreak risk.")
@@ -25,6 +38,10 @@ district = st.sidebar.selectbox(
     "District",
     sorted(list(le_district.classes_))
 )
+
+# Auto-fill elevation based on district
+elevation = district_elevation[district]
+st.sidebar.info(f"📍 Elevation for {district}: {elevation}m (auto-filled)")
 
 st.sidebar.header("📅 Time")
 month_names = ['January','February','March','April','May','June',
@@ -44,9 +61,8 @@ precip = st.sidebar.number_input("Avg Precipitation (mm/day)",
 humidity = st.sidebar.number_input("Avg Humidity (%)",
                         value=80.0,
                         step=0.5)
-elevation = st.sidebar.number_input("Elevation (m)", min_value=0, max_value=2500, value=100, step=1)
 
-# Predict button 
+#  Predict button 
 if st.sidebar.button("🔍 Predict Outbreak Level"):
 
     district_enc = le_district.transform([district])[0]
@@ -90,12 +106,15 @@ if st.sidebar.button("🔍 Predict Outbreak Level"):
     explainer   = shap.Explainer(model)
     shap_values = explainer(input_scaled)
 
+    # Assign proper feature names
+    shap_values.feature_names = feature_cols
+
     fig, ax = plt.subplots(figsize=(10, 4))
     shap.plots.waterfall(shap_values[0], show=False)
     st.pyplot(fig)
     st.caption("🔴 Red bars push toward HIGH outbreak risk | 🔵 Blue bars push toward LOW outbreak risk")
 
-    # Input summary
+    # Input summary 
     st.markdown("---")
     st.subheader("📋 Input Summary")
     col1, col2 = st.columns(2)
@@ -105,7 +124,7 @@ if st.sidebar.button("🔍 Predict Outbreak Level"):
         st.metric("Elevation",     f"{elevation} m")
     with col2:
         st.metric("Temperature",   f"{temp} °C")
-        st.metric("Precipitation", f"{precip} mm")
+        st.metric("Precipitation", f"{precip} mm/day")
         st.metric("Humidity",      f"{humidity} %")
 
 #  Footer 
