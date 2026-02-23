@@ -36,7 +36,7 @@ st.sidebar.header("🌤️ Weather Conditions")
 temp      = st.sidebar.slider("Avg Temperature (°C)",  20.0, 35.0, 28.0, step=0.1)
 precip    = st.sidebar.slider("Avg Precipitation (mm)", 0.0, 500.0, 100.0, step=1.0)
 humidity  = st.sidebar.slider("Avg Humidity (%)",       50.0, 100.0, 75.0, step=0.5)
-elevation = st.sidebar.slider("Elevation (m)",          0, 2500, 100, step=10)
+elevation = st.sidebar.number_input("Elevation (m)", min_value=0, max_value=2500, value=100, step=1)
 
 # Predict button 
 if st.sidebar.button("🔍 Predict Outbreak Level"):
@@ -103,3 +103,4 @@ if st.sidebar.button("🔍 Predict Outbreak Level"):
 #  Footer 
 st.markdown("---")
 st.markdown("*Dataset: Sri Lanka Dengue 2019–2021*")
+
